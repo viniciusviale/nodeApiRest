@@ -36,56 +36,73 @@ module.exports = function (app) {
             res.status(202).send(pagamento);
 
 
-        })
-
-        app.put('/pagamentos/pagamento/:id', function (req, res) {
-            var id = req.params.id;
-
-            var pagamento = {};
-            pagamento.status = 'CONFIRMADO';
-            pagamento.id = id;
-
-            var connection = app.persistence.connectionFactory();
-            var PagamentoDAO = new app.persistence.PagamentoDAO(connection);
-
-            PagamentoDAO.atualizar(pagamento, function (erro) {
-                if (erro) {
-                    res.status(500).send(erro);
-                    return;
-                }
-                res.send(pagamento)
-            });
-
-        });
-
-        app.post('/pagamentos/pagamento', function (req, res) {
-
-            var erros = validacoes(req);
-
-            if (erros) {
-                console.log('Erros de validação');
-                res.status(400).send(erros);
-                return;
-            }
-            var pagamento = req.body;
-            //req.assert('forma_de_pagamento', 'valor deve existir').notEmpty();
-            pagamento.status = "CRIADO";
-            pagamento.data = Date.now();
-
-            var connection = app.persistence.connectionFactory();
-            var PagamentoDAO = new app.persistence.PagamentoDAO(connection);
-
-            PagamentoDAO.salva(pagamento, function (err, resultado) {
-                if (err) {
-                    res.status(500).send(err);
-                } else {
-                    res.location('/pagamentos/pagamento/' + resultado.insertId);
-                    res.status(201).json(resultado);
-                }
-            });
         });
     });
-}
+
+    app.put('/pagamentos/pagamento/:id', function (req, res) {
+        var id = req.params.id;
+
+        var pagamento = {};
+        pagamento.status = 'CONFIRMADO';
+        pagamento.id = id;
+
+        var connection = app.persistence.connectionFactory();
+        var PagamentoDAO = new app.persistence.PagamentoDAO(connection);
+
+        PagamentoDAO.atualizar(pagamento, function (erro) {
+            if (erro) {
+                res.status(500).send(erro);
+                return;
+            }
+            res.send(pagamento)
+        });
+
+    });
+
+    app.post('/pagamentos/pagamento', function (req, res) {
+
+        var erros = validacoes(req);
+
+        if (erros) {
+            console.log('Erros de validação');
+            res.status(400).send(erros);
+            return;
+        }
+        var pagamento = req.body;
+        //req.assert('forma_de_pagamento', 'valor deve existir').notEmpty();
+        pagamento.status = "CRIADO";
+        pagamento.data = Date.now();
+
+        var connection = app.persistence.connectionFactory();
+        var PagamentoDAO = new app.persistence.PagamentoDAO(connection);
+
+        PagamentoDAO.salva(pagamento, function (err, resultado) {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                pagamento.id = resultado.insertId;
+                res.location('/pagamentos/pagamento/' + pagamento.id);
+
+                var response ={
+                    dados_do_pagamento: pagamento,
+                    links: [
+                        {
+                            href:'http://localhost:5001/pagamentos/pagamento/' + pagamento.id,
+                            rel: 'confirmar',
+                            method: 'PUT'
+                        },
+                        {
+                            href:'http://localhost:5001/pagamentos/pagamento/' + pagamento.id,
+                            rel: 'cancelar',
+                            method: 'DELETE'
+                        }
+                    ]
+                };
+                res.status(201).json(response);
+            }
+        });
+    });
+};
 /*
 para testar o post, digite no terminal:
 

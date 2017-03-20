@@ -17,6 +17,7 @@ module.exports = function () {
     consign()
         .include('controllers')
         .then('persistence')
+        .then('servicos')
         .into(app);
 
     // var home = require('../controllers/home.js')(app);
